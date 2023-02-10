@@ -27,18 +27,24 @@ class Home extends GetWidget<HomeController> {
           builder: (controller) => GoogleMap(
             initialCameraPosition: const CameraPosition(
               target: LatLng(37.43296265331129, -122.08832357078792),
-              zoom: 14,
+              zoom: 19,
             ),
-            mapType: controller.isNormalPosition ? MapType.normal : MapType.satellite,
-            markers: {
-              Marker(
-                markerId: const MarkerId('demo'),
-                position: const LatLng(37.43296265331129, -122.08832357078792),
-                onDrag: (value) {},
-                // draggable: true,
-                // icon: controller.markerIcon,
-              ),
+            mapType: MapType.hybrid,
+            circles: Set.of((controller.circle != null) ? [controller.circle!] : []),
+            markers: Set.of((controller.marker != null) ? [controller.marker!] : []),
+            polylines: controller.polyLinePath,
+            onMapCreated: (GoogleMapController mapController){
+              controller.googleMapController = mapController;
             },
+            // markers: {
+            //   Marker(
+            //     markerId: const MarkerId('demo'),
+            //     position: const LatLng(37.43296265331129, -122.08832357078792),
+            //     onDrag: (value) {},
+            //     // draggable: true,
+            //     // icon: controller.markerIcon,
+            //   ),
+            // },
           ),
         ),
       ),
