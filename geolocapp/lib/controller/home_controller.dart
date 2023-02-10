@@ -1,33 +1,88 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 
 class HomeController extends GetxController {
   /// Declaring Variables 😀🔥
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
   bool isNormalPosition = true;
 
+  StreamSubscription? streamLocation;
+  Location location = Location();
+  Marker? marker;
+  Circle? circle;
+  Set<Polyline> polyLinePath = <Polyline>{};
+  List<LatLng> listOfLatLng = [];
+  GoogleMapController? googleMapController;
+  LatLng? latLng;
+
   /// Declaring Mehods 😉🔥
-  
+
   @override
-  onInit(){
+  onInit() {
     super.onInit();
-    addCustomMarker();
-  }
-  
-  void addCustomMarker() {
-    BitmapDescriptor.fromAssetImage(
-           const ImageConfiguration(), 'assets/images/marker.png')
-        .then((icon) {
-          markerIcon = icon;
-          update();
-        });
+    // addCustomMarker();
   }
 
-  void changePosition(){
-    isNormalPosition = !isNormalPosition;
-    update();
+  //* ---------------- Convert Image To Marker By Unit8List ----------------------
+  Future<Uint8List> convertImageToMarker() async {
+    ByteData byteData = await DefaultAssetBundle.of(Get.context!)
+        .load('here i should put my image');
+    return byteData.buffer.asUint8List();
   }
 
+  //* ---------------- Here To Show Up The Path And Update The Marker And Circle ----------------------
+  showPathAndUpdateMarkerAndCircle(
+      {required LocationData newLocalData, required Uint8List imageData}) {
+    latLng = LatLng(newLocalData.latitude!, newLocalData.longitude!);
+    marker = Marker(
+      markerId: const MarkerId('home'),
+      position: latLng!,
+      anchor: const Offset(0.5, 0.5),
+      draggable: false,
+      flat: true,
+      rotation: newLocalData.heading!,
+      zIndex: 2,
+      icon: BitmapDescriptor.fromBytes(imageData),
+    );
+    circle = Circle(
+        circleId: const CircleId('motor'),
+        radius: newLocalData.accuracy!,
+        center: latLng!,
+        strokeColor: Colors.purple.shade200,
+        fillColor: Colors.purple.withAlpha(70),
+        zIndex: 1);
+    listOfLatLng.add(latLng!);
+    polyLinePath.clear();
+    polyLinePath.add(
+      Polyline(
+        polylineId: const PolylineId('7'),
+        points: listOfLatLng,
+        color: Colors.white,
+        width: 4,
+        patterns: [
+          PatternItem.dash(20),
+          PatternItem.gap(10)
+        ]
+      ),
+    );
+  }
 
+  // void addCustomMarker() {
+  //   BitmapDescriptor.fromAssetImage(
+  //           const ImageConfiguration(), 'assets/images/marker.png')
+  //       .then((icon) {
+  //     markerIcon = icon;
+  //     update();
+  //   });
+  // }
+
+  // void changePosition() {
+  //   isNormalPosition = !isNormalPosition;
+  //   update();
+  // }
 }
