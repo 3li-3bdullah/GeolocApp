@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -11,7 +12,7 @@ class HomeController extends GetxController {
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
   bool isNormalPosition = true;
 
-  StreamSubscription? streamLocation;
+  StreamSubscription? streamSubscriptionLocation;
   Location location = Location();
   Marker? marker;
   Circle? circle;
@@ -72,17 +73,36 @@ class HomeController extends GetxController {
     );
   }
 
-  // void addCustomMarker() {
-  //   BitmapDescriptor.fromAssetImage(
-  //           const ImageConfiguration(), 'assets/images/marker.png')
-  //       .then((icon) {
-  //     markerIcon = icon;
-  //     update();
-  //   });
-  // }
+  //* ------------------To Get Current locations -----------------------
 
-  // void changePosition() {
-  //   isNormalPosition = !isNormalPosition;
-  //   update();
-  // }
-}
+  getCurrentLocation() async {
+   try {
+    Uint8List uintImage = await convertImageToMarker();
+
+    var currentLocation = await location.getLocation();
+    showPathAndUpdateMarkerAndCircle(newLocalData: currentLocation, imageData: uintImage);
+
+    streamSubscriptionLocation != null ? streamSubscriptionLocation!.cancel() : null;
+
+    streamSubscriptionLocation = location.onLocationChanged.listen((event) { 
+      if (googleMapController != null) {
+        googleMapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(event.latitude!, event.longitude!),
+              zoom: 18.0,
+            ),
+          ),
+        );
+      }
+      showPathAndUpdateMarkerAndCircle(newLocalData: event, imageData: uintImage);
+      update();
+    });
+   } on PlatformException catch (e) {
+     if (e.code == 'PERMISSION_DENIED') {
+       debugPrint('Permission Denied');
+     }
+   }
+     
+   }
+  }
