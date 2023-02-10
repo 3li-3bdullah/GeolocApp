@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,10 +28,18 @@ class HomeController extends GetxController {
     // addCustomMarker();
   }
 
+  @override
+  void onClose() {
+    if (streamSubscriptionLocation != null) {
+      streamSubscriptionLocation!.cancel();
+    }
+    super.onClose();
+  }
+
   //* ---------------- Convert Image To Marker By Unit8List ----------------------
   Future<Uint8List> convertImageToMarker() async {
     ByteData byteData = await DefaultAssetBundle.of(Get.context!)
-        .load('here i should put my image');
+        .load("assets/images/car.png");
     return byteData.buffer.asUint8List();
   }
 
@@ -61,48 +68,49 @@ class HomeController extends GetxController {
     polyLinePath.clear();
     polyLinePath.add(
       Polyline(
-        polylineId: const PolylineId('7'),
-        points: listOfLatLng,
-        color: Colors.white,
-        width: 4,
-        patterns: [
-          PatternItem.dash(20),
-          PatternItem.gap(10)
-        ]
-      ),
+          polylineId: const PolylineId('7'),
+          points: listOfLatLng,
+          color: Colors.white,
+          width: 4,
+          patterns: [PatternItem.dash(20), PatternItem.gap(10)]),
     );
   }
 
   //* ------------------To Get Current locations -----------------------
 
   getCurrentLocation() async {
-   try {
-    Uint8List uintImage = await convertImageToMarker();
+    try {
+      Uint8List uintImage = await convertImageToMarker();
 
-    var currentLocation = await location.getLocation();
-    showPathAndUpdateMarkerAndCircle(newLocalData: currentLocation, imageData: uintImage);
+      var currentLocation = await location.getLocation();
+      showPathAndUpdateMarkerAndCircle(
+          newLocalData: currentLocation, imageData: uintImage);
 
-    streamSubscriptionLocation != null ? streamSubscriptionLocation!.cancel() : null;
+      streamSubscriptionLocation != null
+          ? streamSubscriptionLocation!.cancel()
+          : null;
 
-    streamSubscriptionLocation = location.onLocationChanged.listen((event) { 
-      if (googleMapController != null) {
-        googleMapController!.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: LatLng(event.latitude!, event.longitude!),
-              zoom: 18.0,
+      streamSubscriptionLocation = location.onLocationChanged.listen((event) {
+        if (googleMapController != null) {
+          googleMapController!.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                bearing: 90.8334901395799,
+                tilt: 0,
+                target: LatLng(event.latitude!, event.longitude!),
+                zoom: 18.0,
+              ),
             ),
-          ),
-        );
+          );
+        }
+        showPathAndUpdateMarkerAndCircle(
+            newLocalData: event, imageData: uintImage);
+        update();
+      });
+    } on PlatformException catch (e) {
+      if (e.code == 'PERMISSION_DENIED') {
+        debugPrint('Permission Denied');
       }
-      showPathAndUpdateMarkerAndCircle(newLocalData: event, imageData: uintImage);
-      update();
-    });
-   } on PlatformException catch (e) {
-     if (e.code == 'PERMISSION_DENIED') {
-       debugPrint('Permission Denied');
-     }
-   }
-     
-   }
+    }
   }
+}
